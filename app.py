@@ -1,464 +1,317 @@
 import streamlit as st
 import pickle
 import string
+import time
 from nltk.corpus import stopwords
 import nltk
 from nltk.stem.porter import PorterStemmer
-import time
-
-nltk.download('punkt_tab')
-nltk.download('stopwords')
-
-ps = PorterStemmer()
-
-def transform_text(text):
-    text = text.lower()
-    text = nltk.word_tokenize(text)
-    y=[]
-    for i in text:
-        if i.isalnum():
-            y.append(i)
-    text=y[:]
-    y.clear()
-
-    for i in text:
-        if i not in stopwords.words('english') and i not in string.punctuation:
-            y.append(i)
-    text=y[:]
-    y.clear()
-
-    for i in text:
-        y.append(ps.stem(i))
-    return " ".join(y)
 
 
-tfidf = pickle.load(open('vectorizer.pkl', 'rb'))
-model = pickle.load(open('model.pkl', 'rb'))
+# =========================================================
+# PAGE CONFIG
+# =========================================================
 
-
-#UX / UI
 st.set_page_config(
     page_title="AI SMS Guard",
     page_icon="🛡️",
     layout="wide"
 )
 
+
+# =========================================================
+# CUSTOM CSS — UI ONLY
+# =========================================================
+
 st.markdown("""
 <style>
 
-.stApp {
-    background:
-        radial-gradient(circle at 10% 10%, rgba(99,102,241,.15), transparent 30%),
-        radial-gradient(circle at 90% 20%, rgba(168,85,247,.13), transparent 30%),
-        #050816;
-    color: #f8fafc;
-}
-
-#MainMenu {
-    visibility: hidden;
-}
-
-footer {
-    visibility: hidden;
-}
-
-header {
-    visibility: hidden;
-}
-
-
-/* HERO */
-
-.hero {
-    text-align: center;
-    padding: 45px 20px 25px;
-}
-
-.badge {
-    display: inline-block;
-    padding: 7px 16px;
-    border-radius: 30px;
-    border: 1px solid rgba(129,140,248,.35);
-    background: rgba(99,102,241,.10);
-    color: #a5b4fc;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    box-shadow: 0 0 20px rgba(99,102,241,.15);
-}
-
-.hero h1 {
-    font-size: clamp(45px, 6vw, 72px);
-    font-weight: 800;
-    letter-spacing: -3px;
-    margin: 18px 0 10px;
-
-    background: linear-gradient(
-        90deg,
-        #ffffff,
-        #a5b4fc,
-        #c084fc,
-        #67e8f9
-    );
-
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.hero p {
-    max-width: 680px;
-    margin: auto;
-    color: #94a3b8;
-    font-size: 18px;
-    line-height: 1.6;
-}
-
-
-/* MAIN CARD */
-
-.main-card {
-    max-width: 900px;
-    margin: 25px auto;
-
-    padding: 28px;
-
-    border-radius: 24px;
-
-    background: linear-gradient(
-        145deg,
-        rgba(255,255,255,.07),
-        rgba(255,255,255,.025)
-    );
-
-    border: 1px solid rgba(255,255,255,.09);
-
-    box-shadow:
-        0 20px 60px rgba(0,0,0,.35),
-        inset 0 1px rgba(255,255,255,.06);
-
-    backdrop-filter: blur(18px);
-}
-
-
-/* TEXT AREA */
-
-textarea {
-    background: rgba(15,23,42,.8) !important;
-    color: #f8fafc !important;
-
-    border: 1px solid rgba(129,140,248,.2) !important;
-
-    border-radius: 16px !important;
-
-    font-size: 16px !important;
-}
-
-textarea:focus {
-    border-color: #818cf8 !important;
-
-    box-shadow:
-        0 0 0 1px #818cf8,
-        0 0 25px rgba(129,140,248,.2) !important;
-}
-
-
-/* BUTTON */
-
-.stButton > button {
-
-    width: 100%;
-
-    border: none;
-
-    border-radius: 14px;
-
-    padding: 14px 20px;
-
-    font-size: 16px;
-
-    font-weight: 700;
-
-    color: white;
-
-    background: linear-gradient(
-        135deg,
-        #6366f1,
-        #8b5cf6,
-        #06b6d4
-    );
-
-    box-shadow:
-        0 0 25px rgba(99,102,241,.25);
-
-    transition: all .25s ease;
-}
-
-.stButton > button:hover {
-
-    transform: translateY(-2px);
-
-    box-shadow:
-        0 0 35px rgba(99,102,241,.45);
-}
-
-
-/* ANALYSIS */
-
-.analysis {
-
-    text-align: center;
-
-    padding: 20px;
-
-    color: #a5b4fc;
-
-    font-weight: 600;
-}
-
-.scanner {
-
-    width: 100%;
-
-    height: 3px;
-
-    margin-top: 14px;
-
-    background: #1e293b;
-
-    overflow: hidden;
-
-    border-radius: 10px;
-}
-
-.scanner-line {
-
-    width: 35%;
-
-    height: 100%;
-
-    background: linear-gradient(
-        90deg,
-        transparent,
-        #818cf8,
-        #22d3ee,
-        transparent
-    );
-
-    animation: scan 1.2s infinite ease-in-out;
-}
-
-@keyframes scan {
-
-    0% {
-        transform: translateX(-120%);
+    /* ---------- MAIN APP ---------- */
+
+    .stApp {
+        background:
+            radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.16), transparent 30%),
+            radial-gradient(circle at 90% 20%, rgba(168, 85, 247, 0.13), transparent 30%),
+            radial-gradient(circle at 50% 90%, rgba(14, 165, 233, 0.08), transparent 35%),
+            #050816;
+        color: #f8fafc;
     }
 
-    100% {
-        transform: translateX(350%);
+    [data-testid="stHeader"] {
+        background: transparent;
     }
-}
+
+    [data-testid="stAppViewContainer"] {
+        background: transparent;
+    }
 
 
-/* RESULT */
+    /* ---------- MAIN CONTENT WIDTH ---------- */
 
-.result {
-
-    max-width: 900px;
-
-    margin: 25px auto;
-
-    padding: 30px;
-
-    text-align: center;
-
-    border-radius: 22px;
-
-    background: rgba(15,23,42,.8);
-
-    border: 1px solid rgba(255,255,255,.08);
-
-    box-shadow:
-        0 20px 50px rgba(0,0,0,.35);
-}
-
-.result-icon {
-    font-size: 48px;
-}
-
-.result-title {
-
-    font-size: 30px;
-
-    font-weight: 800;
-
-    margin-top: 8px;
-}
-
-.result-subtitle {
-
-    color: #94a3b8;
-
-    margin-top: 8px;
-}
+    .block-container {
+        max-width: 1100px;
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
 
 
-/* EXAMPLES */
+    /* ---------- HEADINGS ---------- */
 
-.examples-title {
+    h1 {
+        font-size: 3.5rem !important;
+        font-weight: 800 !important;
+        letter-spacing: -2px;
+        background: linear-gradient(
+            90deg,
+            #ffffff,
+            #a78bfa,
+            #38bdf8
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-align: center;
+        margin-bottom: 0.4rem;
+    }
 
-    max-width: 900px;
+    h2 {
+        color: #f8fafc !important;
+    }
 
-    margin: 40px auto 15px;
-
-    color: #e2e8f0;
-
-    font-size: 18px;
-
-    font-weight: 700;
-}
-
-.example {
-
-    padding: 18px;
-
-    border-radius: 16px;
-
-    height: 100%;
-
-    background: rgba(15,23,42,.65);
-
-    border: 1px solid rgba(255,255,255,.07);
-
-    transition: .25s ease;
-}
-
-.example:hover {
-
-    transform: translateY(-4px);
-
-    border-color: rgba(129,140,248,.4);
-
-    box-shadow:
-        0 10px 30px rgba(99,102,241,.12);
-}
-
-.example-icon {
-
-    font-size: 25px;
-}
-
-.example-name {
-
-    margin-top: 7px;
-
-    font-weight: 700;
-
-    color: #e2e8f0;
-}
-
-.example-text {
-
-    margin-top: 5px;
-
-    font-size: 13px;
-
-    color: #94a3b8;
-
-    line-height: 1.5;
-}
+    h3 {
+        color: #e2e8f0 !important;
+    }
 
 
-/* FOOTER */
+    /* ---------- CAPTIONS ---------- */
 
-.footer {
+    .stCaption {
+        color: #94a3b8 !important;
+    }
 
-    text-align: center;
 
-    padding: 45px 0 20px;
+    /* ---------- TEXT AREA ---------- */
 
-    color: #64748b;
+    [data-testid="stTextArea"] textarea {
+        background: rgba(15, 23, 42, 0.88) !important;
+        color: #f8fafc !important;
+        border: 1px solid rgba(129, 140, 248, 0.35) !important;
+        border-radius: 16px !important;
+        padding: 18px !important;
+        font-size: 16px !important;
+        box-shadow:
+            0 0 25px rgba(99, 102, 241, 0.08),
+            inset 0 0 20px rgba(0, 0, 0, 0.15);
+        transition: all 0.25s ease;
+    }
 
-    font-size: 13px;
-}
+    [data-testid="stTextArea"] textarea:focus {
+        border: 1px solid rgba(129, 140, 248, 0.9) !important;
+        box-shadow:
+            0 0 25px rgba(99, 102, 241, 0.25),
+            0 0 60px rgba(56, 189, 248, 0.08);
+    }
 
-.footer span {
-    color: #818cf8;
-}
+
+    /* ---------- BUTTON ---------- */
+
+    [data-testid="stButton"] button {
+        width: 100%;
+        border-radius: 14px;
+        border: 1px solid rgba(129, 140, 248, 0.45);
+        background: linear-gradient(
+            135deg,
+            #6366f1,
+            #8b5cf6,
+            #06b6d4
+        );
+        color: white;
+        font-weight: 700;
+        font-size: 17px;
+        padding: 0.75rem 1rem;
+        transition: all 0.25s ease;
+        box-shadow:
+            0 0 20px rgba(99, 102, 241, 0.20);
+    }
+
+    [data-testid="stButton"] button:hover {
+        transform: translateY(-2px);
+        box-shadow:
+            0 0 25px rgba(99, 102, 241, 0.45),
+            0 0 50px rgba(6, 182, 212, 0.18);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+
+    /* ---------- COLUMNS / CARDS ---------- */
+
+    [data-testid="column"] {
+        background: rgba(15, 23, 42, 0.55);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        border-radius: 16px;
+        padding: 15px;
+        transition: all 0.25s ease;
+    }
+
+    [data-testid="column"]:hover {
+        border-color: rgba(129, 140, 248, 0.35);
+        box-shadow: 0 0 25px rgba(99, 102, 241, 0.08);
+        transform: translateY(-2px);
+    }
+
+
+    /* ---------- SUCCESS / ERROR / INFO ---------- */
+
+    [data-testid="stAlert"] {
+        border-radius: 16px !important;
+        border: 1px solid rgba(148, 163, 184, 0.18) !important;
+    }
+
+
+    /* ---------- DIVIDER ---------- */
+
+    hr {
+        border-color: rgba(148, 163, 184, 0.12) !important;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+
+    /* ---------- FOOTER ---------- */
+
+    .footer-text {
+        text-align: center;
+        color: #64748b;
+        font-size: 13px;
+        margin-top: 40px;
+    }
 
 </style>
 """, unsafe_allow_html=True)
 
 
-#========================================================
+# =========================================================
+# NLTK
+# =========================================================
 
-st.markdown("""
-<div class="hero">
+nltk.download('punkt_tab')
+nltk.download('stopwords')
 
-    <div class="badge">
-        ✦ MACHINE LEARNING POWERED
-    </div>
-
-    <h1>AI SMS Guard</h1>
-
-    <p>
-        Detect suspicious messages instantly with
-        machine learning powered spam detection.
-    </p>
-
-</div>
-""", unsafe_allow_html=True)
+ps = PorterStemmer()
 
 
-#========================================================
-st.markdown("""
-<div class="main-card">
+# =========================================================
+# TEXT TRANSFORMATION
+# =========================================================
 
-<h3>🔍 Analyze a Message</h3>
+def transform_text(text):
+    text = text.lower()
+    text = nltk.word_tokenize(text)
 
-<p style="color:#94a3b8;">
-Paste an SMS below and let the classifier analyze it.
-</p>
+    y = []
 
-""", unsafe_allow_html=True)
+    for i in text:
+        if i.isalnum():
+            y.append(i)
 
-#========================================================
+    text = y[:]
+    y.clear()
+
+    for i in text:
+        if i not in stopwords.words('english') and i not in string.punctuation:
+            y.append(i)
+
+    text = y[:]
+    y.clear()
+
+    for i in text:
+        y.append(ps.stem(i))
+
+    return " ".join(y)
+
+
+# =========================================================
+# LOAD MODEL
+# =========================================================
+
+tfidf = pickle.load(open('vectorizer.pkl', 'rb'))
+model = pickle.load(open('model.pkl', 'rb'))
+
+
+# =========================================================
+# HERO SECTION
+# =========================================================
+
+st.caption("✦ MACHINE LEARNING POWERED")
+
+st.title("🛡️ AI SMS Guard")
+
+st.markdown(
+    "<p style='text-align:center; color:#94a3b8; "
+    "font-size:18px; margin-bottom:35px;'>"
+    "Detect suspicious messages instantly with "
+    "<b style='color:#a78bfa;'>machine learning powered</b> "
+    "spam detection."
+    "</p>",
+    unsafe_allow_html=True
+)
+
+
+# =========================================================
+# ANALYZER
+# =========================================================
+
+st.subheader("🔍 Analyze a Message")
+
+st.caption(
+    "Paste an SMS or message below and let the classifier determine "
+    "whether it looks like spam."
+)
+
 input_sms = st.text_area(
-    'Enter the message',
-    placeholder="Example: Congratulations! You have won a prize...",
+    "Message",
+    placeholder="Example: Congratulations! You have won a free prize...",
     height=160,
     label_visibility="collapsed"
 )
 
 
-st.markdown("</div>", unsafe_allow_html=True)
+# =========================================================
+# PREDICT BUTTON
+# =========================================================
 
-
-# Button logic
-if st.button('✨ Analyze Message'):
+if st.button("✨ Analyze Message"):
 
     if input_sms.strip() == "":
-        st.warning("Please enter a message.")
+        st.warning("⚠️ Please enter a message first.")
 
     else:
 
-        # UX animation ONLY
-        animation = st.empty()
+        # -------------------------------------------------
+        # UI ANIMATION ONLY
+        # -------------------------------------------------
 
-        animation.markdown("""
-        <div class="analysis">
+        progress = st.progress(
+            0,
+            text="🔍 Preparing message analysis..."
+        )
 
-            🔍 Analyzing message...
+        for i in range(0, 101, 10):
 
-            <div class="scanner">
-                <div class="scanner-line"></div>
-            </div>
+            if i < 40:
+                message = "🔍 Reading message..."
+            elif i < 70:
+                message = "🧠 Processing text..."
+            else:
+                message = "⚡ Running spam detection..."
 
-        </div>
-        """, unsafe_allow_html=True)
+            progress.progress(i, text=message)
+            time.sleep(0.04)
 
-        time.sleep(1)
+        progress.empty()
 
-        animation.empty()
+
+        # =================================================
+        # ORIGINAL ML PIPELINE — DO NOT CHANGE
+        # =================================================
 
         # preprocess
         transformed_sms = transform_text(input_sms)
@@ -469,150 +322,93 @@ if st.button('✨ Analyze Message'):
         # predict
         prediction = model.predict(vector_input)[0]
 
+
+        # =================================================
+        # RESULT
+        # =================================================
+
+        st.divider()
+
         if prediction == 1:
-            st.markdown("""
-            <div class="result">
 
-                <div class="result-icon">
-                    🚨
-                </div>
+            st.error(
+                "🚨 SPAM DETECTED\n\n"
+                "This message has been classified as spam."
+            )
 
-                <div class="result-title">
-                    Spam
-                </div>
-
-                <div class="result-subtitle">
-                    This message has been classified as spam.
-                </div>
-
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                "<p style='text-align:center; color:#94a3b8;'>"
+                "⚠️ Be careful with links, payments, OTP requests, "
+                "and unknown senders."
+                "</p>",
+                unsafe_allow_html=True
+            )
 
         else:
 
-            st.markdown("""
-            <div class="result">
+            st.success(
+                "🛡️ NOT SPAM\n\n"
+                "This message appears to be legitimate."
+            )
 
-                <div class="result-icon">
-                    🛡️
-                </div>
-
-                <div class="result-title">
-                    Not Spam
-                </div>
-
-                <div class="result-subtitle">
-                    This message has been classified as safe.
-                </div>
-
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                "<p style='text-align:center; color:#94a3b8;'>"
+                "✓ The classifier did not identify this message as spam."
+                "</p>",
+                unsafe_allow_html=True
+            )
 
 
-# UX / UI — Example Messages
-st.markdown("""
-<div class="examples-title">
-    💬 Example Messages
-</div>
-""", unsafe_allow_html=True)
+# =========================================================
+# EXAMPLE MESSAGES
+# =========================================================
 
+st.divider()
+
+st.subheader("💬 Try Example Messages")
+
+st.caption(
+    "Test the classifier using some sample messages."
+)
 
 col1, col2, col3, col4 = st.columns(4)
 
-
 with col1:
-
-    st.markdown("""
-    <div class="example">
-
-        <div class="example-icon">📦</div>
-
-        <div class="example-name">
-            Delivery
-        </div>
-
-        <div class="example-text">
-            Your package has been shipped and
-            will arrive tomorrow.
-        </div>
-
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.markdown("### 📦 Delivery")
+    st.caption(
+        "Your package has been shipped and will arrive tomorrow."
+    )
 
 with col2:
-
-    st.markdown("""
-    <div class="example">
-
-        <div class="example-icon">💰</div>
-
-        <div class="example-name">
-            Prize
-        </div>
-
-        <div class="example-text">
-            Congratulations! You have won
-            a £1000 prize. Call now to claim.
-        </div>
-
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.markdown("### 🎁 Prize")
+    st.caption(
+        "Congratulations! You have won a free cash prize. Claim now!"
+    )
 
 with col3:
-
-    st.markdown("""
-    <div class="example">
-
-        <div class="example-icon">🏦</div>
-
-        <div class="example-name">
-            Bank Alert
-        </div>
-
-        <div class="example-text">
-            Your account has been credited
-            with 5000. Thank you.
-        </div>
-
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.markdown("### 🏦 Bank")
+    st.caption(
+        "Your account statement is ready. Please check your email."
+    )
 
 with col4:
+    st.markdown("### 📱 Offer")
+    st.caption(
+        "You have been selected for an exclusive reward. Call now!"
+    )
 
-    st.markdown("""
-    <div class="example">
 
-        <div class="example-icon">👋</div>
+# =========================================================
+# FOOTER
+# =========================================================
 
-        <div class="example-name">
-            Personal
-        </div>
-
-        <div class="example-text">
-            Hey, are we still meeting
-            for lunch today?
-        </div>
-
+st.markdown(
+    """
+    <div class="footer-text">
+        AI SMS Guard &nbsp;•&nbsp; Machine Learning Spam Detection
+        <br>
+        Built with Python, Scikit-learn & Streamlit
     </div>
-    """, unsafe_allow_html=True)
-
-
-# Footer
-st.markdown("""
-<div class="footer">
-
-    Built with
-    <span>Python</span> ·
-    <span>NLTK</span> ·
-    <span>Scikit-learn</span> ·
-    <span>Streamlit</span>
-
-    <br><br>
-
-    AI SMS Guard • Intelligent Message Classification
-
-</div>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True
+)
