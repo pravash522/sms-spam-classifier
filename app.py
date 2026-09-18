@@ -7,9 +7,7 @@ import nltk
 from nltk.stem.porter import PorterStemmer
 
 
-# =========================================================
-# PAGE CONFIG
-# =========================================================
+# ===========Page Configuration====================
 
 st.set_page_config(
     page_title="Email/SMS Spam Classifier",
@@ -18,9 +16,7 @@ st.set_page_config(
 )
 
 
-# =========================================================
-# CUSTOM CSS — UI ONLY
-# =========================================================
+# ========UI STYLING====================
 
 st.markdown("""
 <style>
@@ -188,9 +184,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# =========================================================
-# NLTK
-# =========================================================
+# =======Nltk Downloads====================
 
 nltk.download('punkt_tab')
 nltk.download('stopwords')
@@ -198,9 +192,7 @@ nltk.download('stopwords')
 ps = PorterStemmer()
 
 
-# =========================================================
-# TEXT TRANSFORMATION
-# =========================================================
+# ============Text Preprocessing Function====================
 
 def transform_text(text):
     text = text.lower()
@@ -228,17 +220,13 @@ def transform_text(text):
     return " ".join(y)
 
 
-# =========================================================
-# LOAD MODEL
-# =========================================================
+# =======Loading the Model and Vectorizer====================
 
 tfidf = pickle.load(open('vectorizer.pkl', 'rb'))
 model = pickle.load(open('model.pkl', 'rb'))
 
 
-# =========================================================
-# HERO SECTION
-# =========================================================
+# ============Caption and Title====================
 
 st.caption("✦ MACHINE LEARNING POWERED")
 
@@ -255,9 +243,7 @@ st.markdown(
 )
 
 
-# =========================================================
-# ANALYZER
-# =========================================================
+# ======== Analyze Message Section =====================
 
 st.subheader("🔍 Analyze a Message")
 
@@ -274,9 +260,7 @@ input_sms = st.text_area(
 )
 
 
-# =========================================================
-# PREDICT BUTTON
-# =========================================================
+# ========Predict Button=====================
 
 if st.button("✨ Analyze Message"):
 
@@ -285,9 +269,7 @@ if st.button("✨ Analyze Message"):
 
     else:
 
-        # -------------------------------------------------
-        # UI ANIMATION ONLY
-        # -------------------------------------------------
+        # UI Animation
 
         progress = st.progress(
             0,
@@ -309,9 +291,7 @@ if st.button("✨ Analyze Message"):
         progress.empty()
 
 
-        # =================================================
-        # ORIGINAL ML PIPELINE — DO NOT CHANGE
-        # =================================================
+        # ML Pipeline: Preprocess, Vectorize, Predict
 
         # preprocess
         transformed_sms = transform_text(input_sms)
@@ -323,9 +303,7 @@ if st.button("✨ Analyze Message"):
         prediction = model.predict(vector_input)[0]
 
 
-        # =================================================
-        # RESULT
-        # =================================================
+        # ==============Result========================
 
         st.divider()
 
@@ -359,9 +337,7 @@ if st.button("✨ Analyze Message"):
             )
 
 
-# =========================================================
-# EXAMPLE MESSAGES
-# =========================================================
+# ==========Example Message=======================
 
 st.divider()
 
@@ -398,9 +374,7 @@ with col4:
     )
 
 
-# =========================================================
-# FOOTER
-# =========================================================
+# ==========Footer=======================
 
 st.markdown(
     """
