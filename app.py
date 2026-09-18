@@ -12,7 +12,7 @@ from nltk.stem.porter import PorterStemmer
 # =========================================================
 
 st.set_page_config(
-    page_title="AI SMS Guard",
+    page_title="Email/SMS Spam Classifier",
     page_icon="🛡️",
     layout="wide"
 )
