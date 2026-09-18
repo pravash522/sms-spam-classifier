@@ -242,7 +242,7 @@ model = pickle.load(open('model.pkl', 'rb'))
 
 st.caption("✦ MACHINE LEARNING POWERED")
 
-st.title("🛡️ AI SMS Guard")
+st.title("🛡️ Email/SMS Spam Classifier")
 
 st.markdown(
     "<p style='text-align:center; color:#94a3b8; "
@@ -405,7 +405,7 @@ with col4:
 st.markdown(
     """
     <div class="footer-text">
-        AI SMS Guard &nbsp;•&nbsp; Machine Learning Spam Detection
+        Email/SMS Spam Classifier &nbsp;•&nbsp; Machine Learning Spam Detection
         <br>
         Built with Python, Scikit-learn & Streamlit
     </div>
